@@ -26,7 +26,7 @@ def react():
 
     # For now, always return the test image
     # Future: Use Ollama LLM to select appropriate reaction image
-    image = IMAGES_BY_ID["dr-manhattan-understands"]
+    image = IMAGES_BY_ID["30th-birthday-knees"]
 
     return jsonify({
         "image_url": f"/static/images/{image['filename']}",

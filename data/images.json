@@ -11,6 +11,102 @@
       "filename": "dr-manhattan-understands.jpg",
       "description": "Dr. Manhattan understands - use for dissapointment but understanding",
       "tags": ["dissapointment", "understanding", "let down", "watchmen"]
+    },
+    {
+      "id": "30th-birthday-knees",
+      "filename": "IMG_0009.jpeg",
+      "description": "Avatar meme - 30th birthday took away your bending (knees) - use for jokes about aging and body falling apart",
+      "tags": ["aging", "turning 30", "knees", "avatar", "getting old", "birthday"]
+    },
+    {
+      "id": "you-son-of-a-bitch-im-in",
+      "filename": "IMG_0030.jpeg",
+      "description": "Rick saying 'You son of a bitch, I'm in' - use when enthusiastically agreeing to a plan or idea",
+      "tags": ["agreement", "enthusiasm", "rick and morty", "im in", "count me in"]
+    },
+    {
+      "id": "thanos-squad-posted-up",
+      "filename": "IMG_0043.jpeg",
+      "description": "Thanos and Gamora - squad? posted up? lowkey with fam? and bae - use for checking in on friend group plans",
+      "tags": ["squad", "friends", "plans", "marvel", "thanos", "hangout"]
+    },
+    {
+      "id": "group-facepalm-emoji",
+      "filename": "IMG_0047.jpeg",
+      "description": "Group of emoji faces all facepalming - use for collective disappointment or embarrassment",
+      "tags": ["facepalm", "disappointment", "embarrassment", "emoji", "group"]
+    },
+    {
+      "id": "weary-pleading-emoji",
+      "filename": "IMG_0048.jpeg",
+      "description": "Sad weary emoji with pleading hands - use for exhaustion or begging",
+      "tags": ["tired", "exhausted", "pleading", "emoji", "weary", "begging"]
+    },
+    {
+      "id": "thinking-cap-emoji",
+      "filename": "IMG_0049.jpeg",
+      "description": "Thinking emoji with backwards cap - use for skeptical or suspicious thinking",
+      "tags": ["thinking", "skeptical", "suspicious", "emoji", "hmm", "doubt"]
+    },
+    {
+      "id": "senator-mullin-stand-up",
+      "filename": "IMG_0052.jpeg",
+      "description": "Senator Mullin standing up aggressively at hearing - use for wanting to fight or confrontation",
+      "tags": ["fight", "confrontation", "aggressive", "stand up", "politics", "ready to throw down"]
+    },
+    {
+      "id": "thing-letterboxd-rating",
+      "filename": "IMG_0139.jpeg",
+      "description": "The Thing from Fantastic Four showing 5-star Letterboxd rating - use for movie recommendations or reviews",
+      "tags": ["movies", "letterboxd", "rating", "review", "five stars", "fantastic four", "recommendation"]
+    },
+    {
+      "id": "yea-creature",
+      "filename": "IMG_0195.jpeg",
+      "description": "Simple drawing of happy creature saying 'yea' - use for casual agreement or affirmation",
+      "tags": ["yes", "agreement", "casual", "yea", "simple", "affirm"]
+    },
+    {
+      "id": "les-goh",
+      "filename": "IMG_0197.jpeg",
+      "description": "Profile named 'Les Goh' (sounds like 'let's go') - use for hype or getting started",
+      "tags": ["lets go", "hype", "excited", "pun", "motivation", "start"]
+    },
+    {
+      "id": "bear-hospital-stocks",
+      "filename": "IMG_0215.jpeg",
+      "description": "Bear in hospital bed with green stock chart - use when bears get wrecked by market going up",
+      "tags": ["stocks", "bear market", "investing", "loss", "market", "finance", "rekt"]
+    },
+    {
+      "id": "brain-chess-relaxed",
+      "filename": "IMG_0233.jpeg",
+      "description": "Big brain relaxed on throne vs small brain struggling at chess - use for effortless superiority or not even trying",
+      "tags": ["chess", "brain", "thinking", "strategy", "superiority", "effortless", "easy"]
+    },
+    {
+      "id": "healthcare-pls",
+      "filename": "IMG_0235.jpeg",
+      "description": "Melting wojak saying 'Healthcare pls' - use for desperation about healthcare or basic needs",
+      "tags": ["healthcare", "wojak", "desperate", "please", "struggling", "help"]
+    },
+    {
+      "id": "right-on-brother",
+      "filename": "IMG_0238.jpeg",
+      "description": "GPS showing turn onto Brother St with 'Right on Brother' - use for supportive agreement",
+      "tags": ["support", "agreement", "brother", "right on", "solidarity", "pun"]
+    },
+    {
+      "id": "must-keep-going-mouse",
+      "filename": "IMG_0241.jpeg",
+      "description": "Mouse knight - I must keep going for I know not what else to do - use for perseverance through uncertainty",
+      "tags": ["perseverance", "keep going", "determination", "struggle", "knight", "motivation", "existential"]
+    },
+    {
+      "id": "afters-venn-diagram",
+      "filename": "IMG_0243.jpeg",
+      "description": "Venn diagram of chicks, good music, stimulating conversation overlapping at 'my afters' - use for ideal hangout vibes",
+      "tags": ["party", "afters", "venn diagram", "vibes", "hangout", "social", "music"]
     }
   ]
 }
