@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Finder</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <h1>Reaction Finder</h1>
+        </header>
+
+        <div class="chat-messages" id="chat-messages">
+            <div class="message system">
+                Type a prompt to get a reaction image!
+            </div>
+        </div>
+
+        <form class="chat-input" id="chat-form">
+            <input
+                type="text"
+                id="prompt-input"
+                placeholder="Describe the reaction you want..."
+                autocomplete="off"
+                required
+            >
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
