@@ -355,6 +355,16 @@ body {
     margin-top: 16px;
 }
 
+#step-loading .loading-hint {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 8px;
+}
+
+#step-loading button {
+    margin-top: 20px;
+}
+
 /* Success State */
 #step-success {
     text-align: center;

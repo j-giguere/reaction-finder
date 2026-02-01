@@ -25,10 +25,11 @@ class JsonMetadataRepository(MetadataRepository):
 
         # Ensure the file exists with valid structure
         if not self.json_path.exists():
-            self._write_data({"images": []})
+            with FileLock(self.lock_path):
+                self._write_data_unlocked({"images": []})
 
     def _read_data(self) -> dict:
-        """Read and parse the JSON file."""
+        """Read and parse the JSON file. Caller must hold lock if needed."""
         try:
             with open(self.json_path, "r") as f:
                 return json.load(f)
@@ -36,12 +37,11 @@ class JsonMetadataRepository(MetadataRepository):
             logger.error(f"Failed to read metadata file: {e}")
             return {"images": []}
 
-    def _write_data(self, data: dict) -> bool:
-        """Write data to the JSON file with file locking."""
+    def _write_data_unlocked(self, data: dict) -> bool:
+        """Write data to JSON file. Caller must hold lock."""
         try:
-            with FileLock(self.lock_path):
-                with open(self.json_path, "w") as f:
-                    json.dump(data, f, indent=2)
+            with open(self.json_path, "w") as f:
+                json.dump(data, f, indent=2)
             return True
         except IOError as e:
             logger.error(f"Failed to write metadata file: {e}")
@@ -70,7 +70,7 @@ class JsonMetadataRepository(MetadataRepository):
                 logger.info(f"Added metadata for image {image_data.get('id')}")
 
             data["images"] = images
-            return self._write_data(data)
+            return self._write_data_unlocked(data)
 
     def get_all_metadata(self) -> list[dict]:
         """Retrieve all image metadata."""
@@ -97,7 +97,7 @@ class JsonMetadataRepository(MetadataRepository):
             if len(images) < original_len:
                 data["images"] = images
                 logger.info(f"Deleted metadata for image {image_id}")
-                return self._write_data(data)
+                return self._write_data_unlocked(data)
             else:
                 logger.warning(f"Image {image_id} not found for deletion")
                 return False

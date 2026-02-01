@@ -1,7 +1,7 @@
 """Services package for Reaction Finder."""
 
 from .ollama_service import OllamaService
-from .metadata_generator import MetadataGenerator
+from .metadata_generator import MetadataGenerator, MetadataGenerationError
 from .repositories import (
     ImageStorageRepository,
     MetadataRepository,
@@ -12,6 +12,7 @@ from .repositories import (
 __all__ = [
     "OllamaService",
     "MetadataGenerator",
+    "MetadataGenerationError",
     "ImageStorageRepository",
     "MetadataRepository",
     "LocalImageStorage",

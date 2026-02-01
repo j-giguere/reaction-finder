@@ -6,12 +6,13 @@ from pathlib import Path
 from flask import Flask, render_template, jsonify, request
 
 from config import Config
-from services import OllamaService, MetadataGenerator, LocalImageStorage, JsonMetadataRepository
+from services import OllamaService, MetadataGenerator, MetadataGenerationError, LocalImageStorage, JsonMetadataRepository
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    force=True,
 )
 logger = logging.getLogger(__name__)
 
@@ -42,16 +43,20 @@ def index():
 
 @app.route("/api/react", methods=["POST"])
 def react():
+    logger.debug("React endpoint called")
     data = request.get_json()
     if not data:
         return jsonify({"error": "Request body must be JSON"}), 400
 
     prompt = data.get("prompt", "")
+    logger.info(f"React request - prompt: {prompt}")
     if not prompt or not prompt.strip():
         return jsonify({"error": "Prompt is required"}), 400
 
     # Use Ollama to select the appropriate reaction image
+    logger.debug("Calling Ollama for image selection")
     image_id = ollama_service.select_image(prompt)
+    logger.info(f"Ollama selected image: {image_id}")
     image = IMAGES_BY_ID.get(image_id)
 
     # Fallback safety check (should not happen, but be defensive)
@@ -98,9 +103,15 @@ def reload_image_catalog():
     ollama_service = OllamaService(IMAGE_CATALOG)
 
 
+# Temporary storage for pending uploads (in production, use Redis or similar)
+pending_uploads = {}
+
+
 @app.route("/api/upload", methods=["POST"])
 def upload():
-    """Handle image upload with automatic metadata generation."""
+    """Handle image upload - generates metadata but does NOT save permanently."""
+    logger.info("Upload endpoint called")
+
     # Check if file was provided
     if "file" not in request.files:
         return jsonify({"success": False, "error": "No file provided"}), 400
@@ -128,29 +139,83 @@ def upload():
             "error": f"File too large. Maximum size: {max_mb:.0f}MB"
         }), 400
 
-    # Generate unique filename
+    # Generate unique filename and upload ID
     original_ext = file.filename.rsplit(".", 1)[1].lower()
     unique_filename = f"{uuid.uuid4().hex}.{original_ext}"
+    upload_id = uuid.uuid4().hex
 
     try:
         # Generate metadata using vision LLM
         metadata = metadata_generator.generate_metadata(file)
 
-        # Reset file position after metadata generation read it
+        # Reset file position and read file data into memory
         file.seek(0)
+        file_data = file.read()
 
+        # Store temporarily (not saved to disk yet)
+        pending_uploads[upload_id] = {
+            "filename": unique_filename,
+            "file_data": file_data,
+            "description": metadata["description"],
+            "tags": metadata["tags"],
+        }
+
+        logger.info(f"Upload {upload_id} pending confirmation")
+
+        return jsonify({
+            "success": True,
+            "upload_id": upload_id,
+            "metadata": {
+                "description": metadata["description"],
+                "tags": metadata["tags"],
+            }
+        })
+
+    except MetadataGenerationError as e:
+        logger.error(f"Metadata generation failed: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Failed to analyze image. Please try again."
+        }), 500
+
+    except Exception as e:
+        logger.error(f"Upload failed: {e}")
+        return jsonify({"success": False, "error": "Upload failed"}), 500
+
+
+@app.route("/api/upload/confirm", methods=["POST"])
+def confirm_upload():
+    """Confirm and save a pending upload."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "error": "Request body must be JSON"}), 400
+
+    upload_id = data.get("upload_id")
+    if not upload_id or upload_id not in pending_uploads:
+        return jsonify({"success": False, "error": "Invalid or expired upload"}), 400
+
+    # Get pending upload data
+    pending = pending_uploads.pop(upload_id)
+
+    # Allow user to override description and tags
+    description = data.get("description", pending["description"])
+    tags = data.get("tags", pending["tags"])
+
+    try:
         # Save image to storage
-        image_url = image_storage.save_image(file, unique_filename)
+        from io import BytesIO
+        file_obj = BytesIO(pending["file_data"])
+        image_url = image_storage.save_image(file_obj, pending["filename"])
 
         # Generate ID from description
-        image_id = generate_image_id(metadata["description"])
+        image_id = generate_image_id(description)
 
         # Build image data
         image_data = {
             "id": image_id,
-            "filename": unique_filename,
-            "description": metadata["description"],
-            "tags": metadata["tags"],
+            "filename": pending["filename"],
+            "description": description,
+            "tags": tags,
         }
 
         # Save metadata
@@ -159,20 +224,37 @@ def upload():
         # Reload the catalog so new image is available for selection
         reload_image_catalog()
 
+        logger.info(f"Upload {upload_id} confirmed and saved as {image_id}")
+
         return jsonify({
             "success": True,
             "image": {
                 "id": image_id,
-                "filename": unique_filename,
-                "description": metadata["description"],
-                "tags": metadata["tags"],
+                "filename": pending["filename"],
+                "description": description,
+                "tags": tags,
                 "image_url": image_url,
             }
         })
 
     except Exception as e:
-        logger.error(f"Upload failed: {e}")
-        return jsonify({"success": False, "error": "Upload failed"}), 500
+        logger.error(f"Confirm upload failed: {e}")
+        return jsonify({"success": False, "error": "Failed to save image"}), 500
+
+
+@app.route("/api/upload/cancel", methods=["POST"])
+def cancel_upload():
+    """Cancel a pending upload."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "error": "Request body must be JSON"}), 400
+
+    upload_id = data.get("upload_id")
+    if upload_id and upload_id in pending_uploads:
+        del pending_uploads[upload_id]
+        logger.info(f"Upload {upload_id} cancelled")
+
+    return jsonify({"success": True})
 
 
 @app.route("/api/health")
@@ -196,10 +278,14 @@ def health():
 
 if __name__ == "__main__":
     # Log startup info
-    logger.info(f"Starting Reaction Finder with Ollama model: {Config.OLLAMA_MODEL}")
+    logger.info("=" * 50)
+    logger.info("REACTION FINDER STARTING")
+    logger.info("=" * 50)
+    logger.info(f"Ollama model: {Config.OLLAMA_MODEL}")
+    logger.info(f"Vision model: {Config.VISION_MODEL}")
     if ollama_service.is_available():
         logger.info("Ollama is available and ready")
     else:
         logger.warning("Ollama is not available - will use fallback images")
 
-    app.run(host="0.0.0.0", port=8080, debug=False)
+    app.run(host="0.0.0.0", port=8080, debug=True)

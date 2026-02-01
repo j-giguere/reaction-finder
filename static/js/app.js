@@ -79,11 +79,13 @@ const btnBack = document.getElementById("btn-back");
 const btnSave = document.getElementById("btn-save");
 const btnDone = document.getElementById("btn-done");
 const btnRetry = document.getElementById("btn-retry");
+const btnCancel = document.getElementById("btn-cancel");
 const errorMessage = document.getElementById("error-message");
 
 // State
 let selectedFile = null;
-let generatedMetadata = null;
+let pendingUploadId = null;
+let uploadAbortController = null;
 
 function showStep(step) {
     [stepUpload, stepPreview, stepLoading, stepSuccess, stepError].forEach(s => {
@@ -103,9 +105,26 @@ function closeModal() {
     resetModal();
 }
 
-function resetModal() {
+async function resetModal() {
+    // Abort any in-flight upload request
+    if (uploadAbortController) {
+        uploadAbortController.abort();
+        uploadAbortController = null;
+    }
+    // Cancel any pending upload on the server
+    if (pendingUploadId) {
+        try {
+            await fetch("/api/upload/cancel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ upload_id: pendingUploadId }),
+            });
+        } catch (e) {
+            console.log("Failed to cancel upload:", e);
+        }
+        pendingUploadId = null;
+    }
     selectedFile = null;
-    generatedMetadata = null;
     fileInput.value = "";
     editDescription.value = "";
     editTags.value = "";
@@ -193,10 +212,14 @@ async function uploadAndGenerateMetadata() {
     const formData = new FormData();
     formData.append("file", selectedFile);
 
+    // Create abort controller for this request
+    uploadAbortController = new AbortController();
+
     try {
         const response = await fetch("/api/upload", {
             method: "POST",
             body: formData,
+            signal: uploadAbortController.signal,
         });
 
         const data = await response.json();
@@ -206,19 +229,26 @@ async function uploadAndGenerateMetadata() {
             return;
         }
 
-        // Store the response data
-        generatedMetadata = data.image;
+        // Store the upload ID for later confirmation
+        pendingUploadId = data.upload_id;
 
         // Populate form with generated metadata
-        editDescription.value = data.image.description;
-        editTags.value = data.image.tags.join(", ");
+        editDescription.value = data.metadata.description;
+        editTags.value = data.metadata.tags.join(", ");
 
         // Show preview step
         showStep(stepPreview);
 
     } catch (error) {
+        // Ignore abort errors (user cancelled)
+        if (error.name === "AbortError") {
+            console.log("Upload cancelled by user");
+            return;
+        }
         console.error("Upload error:", error);
         showError("Upload failed. Please try again.");
+    } finally {
+        uploadAbortController = null;
     }
 }
 
@@ -227,17 +257,50 @@ function showError(message) {
     showStep(stepError);
 }
 
-// Back button
-btnBack.addEventListener("click", () => {
+// Back button - cancel the pending upload
+btnBack.addEventListener("click", async () => {
+    await resetModal();
     showStep(stepUpload);
-    selectedFile = null;
 });
 
-// Save button - metadata is already saved, just confirm
-btnSave.addEventListener("click", () => {
-    // In this implementation, metadata is saved during upload
-    // The save button just confirms and closes
-    showStep(stepSuccess);
+// Save button - confirm the upload and save permanently
+btnSave.addEventListener("click", async () => {
+    if (!pendingUploadId) {
+        showError("No pending upload to save");
+        return;
+    }
+
+    // Parse tags from comma-separated input
+    const tags = editTags.value
+        .split(",")
+        .map(t => t.trim().toLowerCase())
+        .filter(t => t.length > 0);
+
+    try {
+        const response = await fetch("/api/upload/confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                upload_id: pendingUploadId,
+                description: editDescription.value.trim(),
+                tags: tags,
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            showError(data.error || "Failed to save image");
+            return;
+        }
+
+        pendingUploadId = null;  // Clear since it's now saved
+        showStep(stepSuccess);
+
+    } catch (error) {
+        console.error("Save error:", error);
+        showError("Failed to save image. Please try again.");
+    }
 });
 
 // Done button
@@ -251,4 +314,10 @@ btnDone.addEventListener("click", () => {
 btnRetry.addEventListener("click", () => {
     showStep(stepUpload);
     resetModal();
+});
+
+// Cancel button (during loading)
+btnCancel.addEventListener("click", () => {
+    resetModal();  // This will abort the request
+    showStep(stepUpload);
 });
