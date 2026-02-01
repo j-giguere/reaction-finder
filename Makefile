@@ -8,7 +8,8 @@ install:
 	conda run -n $(ENV_NAME) pip install -r requirements.txt
 
 run:
-	conda run -n $(ENV_NAME) python app.py
+	@echo "Make sure conda env is activated: conda activate $(ENV_NAME)"
+	python app.py
 
 clean:
 	conda remove -n $(ENV_NAME) --all -y 2>/dev/null || true
