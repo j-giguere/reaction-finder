@@ -10,9 +10,8 @@ class Config:
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
     OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
-    # Vision model for metadata generation (llava or llama3.2-vision)
-    # VISION_MODEL = os.getenv("VISION_MODEL", "moondream")
-    VISION_MODEL = os.getenv("VISION_MODEL", "llava")
+    # Vision model for metadata generation (llama3.2-vision recommended)
+    VISION_MODEL = os.getenv("VISION_MODEL", "llama3.2-vision")
 
     # Fallback image when Ollama fails or returns invalid response
     FALLBACK_IMAGE_ID = os.getenv("FALLBACK_IMAGE_ID", "yea-creature")

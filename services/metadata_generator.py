@@ -20,12 +20,25 @@ class MetadataGenerationError(Exception):
     """Raised when metadata generation fails."""
     pass
 
-METADATA_PROMPT = """Describe this reaction image in JSON format.
+SYSTEM_PROMPT = """You are a metadata generator for reaction images. You output only valid JSON with no explanation or markdown. Your responses must be parseable JSON objects."""
 
-What is shown in the image? What emotion or situation would someone use this for?
+METADATA_PROMPT = """Analyze this reaction image and generate metadata.
 
-Respond with ONLY this JSON (no other text):
-{"description": "SHORT DESCRIPTION - use when SITUATION", "tags": ["emotion", "topic", "action"]}"""
+Your task:
+1. Identify what is visually depicted (person, character, animal, object, scene)
+2. Determine the emotion or sentiment conveyed (happy, angry, confused, skeptical, excited, etc.)
+3. Suggest when someone would use this reaction in a conversation
+
+Return valid JSON with this exact structure:
+{
+  "description": "A brief description followed by ' - use when' and the situation",
+  "tags": ["primary_emotion", "secondary_emotion", "subject_type", "action_or_context"]
+}
+
+Rules:
+- description: Max 100 characters, format: "[what it shows] - use when [situation]"
+- tags: Exactly 3-5 lowercase single-word tags
+- No markdown, no explanation, just the JSON object"""
 
 
 class MetadataGenerator:
@@ -122,19 +135,24 @@ class MetadataGenerator:
                 model=self.model,
                 messages=[
                     {
+                        "role": "system",
+                        "content": SYSTEM_PROMPT,
+                    },
+                    {
                         "role": "user",
                         "content": METADATA_PROMPT,
                         "images": [image_b64],
                     }
                 ],
+                format="json",
                 options={
-                    "temperature": 0.3,
-                    "num_predict": 256,  # Limit response length for speed
+                    "temperature": 0.2,
+                    "num_predict": 256,
                 },
             )
 
             response_text = response["message"]["content"]
-            logger.info(f"Vision LLM response received")
+            logger.info("Vision LLM response received")
             logger.debug(f"Vision LLM response: {response_text}")
 
             metadata = self._parse_json_response(response_text)
@@ -178,19 +196,24 @@ class MetadataGenerator:
                 model=self.model,
                 messages=[
                     {
+                        "role": "system",
+                        "content": SYSTEM_PROMPT,
+                    },
+                    {
                         "role": "user",
                         "content": METADATA_PROMPT,
                         "images": [image_b64],
                     }
                 ],
+                format="json",
                 options={
-                    "temperature": 0.3,
-                    "num_predict": 256,  # Limit response length for speed
+                    "temperature": 0.2,
+                    "num_predict": 256,
                 },
             )
 
             response_text = response["message"]["content"]
-            logger.info(f"Vision LLM response received")
+            logger.info("Vision LLM response received")
             logger.debug(f"Vision LLM response: {response_text}")
 
             metadata = self._parse_json_response(response_text)
